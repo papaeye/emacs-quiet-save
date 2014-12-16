@@ -89,6 +89,15 @@ buffers."
   :type 'number
   :group 'quiet-save)
 
+(defcustom quiet-save-vc-root-backends '(git)
+  "List of version control backends for which `quiet-save-vc-root'
+will be used."
+  :type '(repeat symbol)
+  :group 'quiet-save)
+
+(defvar quiet-save-vc-backend-alist
+  '((git . ".git") (hg . ".hg")))
+
 (defun quiet-save-include-p (filename)
   (let ((case-fold-search quiet-save-case-fold-search)
 	(checks quiet-save-exclude)
@@ -113,6 +122,24 @@ buffers."
 		     (error nil))
 	    checks (cdr checks)))
     keepit))
+
+(defun quiet-save-vc-root (filename)
+  (let ((backend-roots
+	 (mapcar (lambda (backend)
+		   (cdr (assq backend quiet-save-vc-backend-alist)))
+		 quiet-save-vc-root-backends)))
+    (if (= (length backend-roots) 1)
+	(vc-find-root filename (car backend-roots))
+      (vc-find-root filename
+		    (lambda (dir)
+		      (let ((roots backend-roots)
+			    found)
+			(while (and roots (not found))
+			  (if (file-exists-p (expand-file-name (car roots)
+							       dir))
+			      (setq found dir))
+			  (setq roots (cdr roots)))
+			found))))))
 
 (eval-and-compile
   (fset 'quiet-save-write-region-original (symbol-function 'write-region)))
