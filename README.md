@@ -31,5 +31,6 @@ directories checked out from Git or Mercurial, add the following
 code into your .emacs:
 
 ```elisp
-(setq quiet-save-keep '(vc-git-root vc-hg-root))
+(setq quiet-save-vc-root-backends '(git hg))
+(setq quiet-save-keep '(quiet-save-vc-root))
 ```
