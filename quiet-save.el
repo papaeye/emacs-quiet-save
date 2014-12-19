@@ -171,8 +171,7 @@ will be used."
 (defvar quiet-save-idle-timer nil)
 
 ;;;###autoload
-(define-minor-mode quiet-save-mode
-  ""
+(define-minor-mode quiet-save-mode nil
   :global t
   :group 'quiet-save
   (if quiet-save-idle-timer
