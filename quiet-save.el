@@ -154,7 +154,7 @@ will be used."
 
 (defun quiet-save-buffers ()
   (cl-letf (((symbol-function 'write-region) #'quiet-save-write-region))
-    (save-excursion
+    (save-current-buffer
       (dolist (buffer (buffer-list))
 	(set-buffer buffer)
 	(when (and buffer-file-name
