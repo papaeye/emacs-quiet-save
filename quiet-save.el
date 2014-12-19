@@ -153,22 +153,20 @@ will be used."
 				    lockname mustbenew))
 
 (defun quiet-save-buffers ()
-  (let ((buffers (buffer-list)))
+  (cl-letf (((symbol-function 'write-region) #'quiet-save-write-region))
     (save-excursion
-      (cl-letf (((symbol-function 'write-region) #'quiet-save-write-region))
-	(while buffers
-	  (set-buffer (car buffers))
-	  (when (and buffer-file-name
-		     (buffer-modified-p)
-		     (not buffer-read-only)
-		     (quiet-save-include-p buffer-file-name)
-		     (quiet-save-keep-p buffer-file-name)
-		     (not (buffer-base-buffer))
-		     (file-writable-p buffer-file-name))
-	    (basic-save-buffer)
-	    (set-visited-file-modtime)
-	    (set-buffer-modified-p nil))
-	  (setq buffers (cdr buffers)))))))
+      (dolist (buffer (buffer-list))
+	(set-buffer buffer)
+	(when (and buffer-file-name
+		   (buffer-modified-p)
+		   (not buffer-read-only)
+		   (quiet-save-include-p buffer-file-name)
+		   (quiet-save-keep-p buffer-file-name)
+		   (not (buffer-base-buffer))
+		   (file-writable-p buffer-file-name))
+	  (basic-save-buffer)
+	  (set-visited-file-modtime)
+	  (set-buffer-modified-p nil))))))
 
 (defvar quiet-save-idle-timer nil)
 
