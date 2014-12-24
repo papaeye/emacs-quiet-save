@@ -1,9 +1,9 @@
 ;;; quiet-save.el --- Auto-save buffers quietly      -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2007 Kentaro Kuribayashi
+;; Copyright (C) 2014 papaeye
 
-;; Author: Kentaro Kuribayashi <kentarok@gmail.com>
-;; Maintainer: papaeye <papaeye@gmail.com>
+;; Author: papaeye <papaeye@gmail.com>
 ;; Keywords: convenience, files
 ;; Version: 0.1.0
 ;; Note: auto-save-buffers-enhanced.el borrows main ideas and some
