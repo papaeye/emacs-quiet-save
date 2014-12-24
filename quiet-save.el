@@ -66,7 +66,7 @@
 
 (defgroup quiet-save nil
   "Auto-saving buffers quietly."
-  :group 'auto-save)
+  :group 'files)
 
 (defcustom quiet-save-exclude nil
   "List of regexps and predicates for filenames excluded from the auto-saving
