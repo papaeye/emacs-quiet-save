@@ -130,17 +130,15 @@ will be used."
 		   (cdr (assq backend quiet-save-vc-backend-alist)))
 		 quiet-save-vc-root-backends)))
     (locate-dominating-file filename
-			    (if (= (length backend-roots) 1)
-				(car backend-roots)
-			      (lambda (dir)
-				(let ((roots backend-roots)
-				      found)
-				  (while (and roots (not found))
-				    (if (file-exists-p
-					 (expand-file-name (car roots) dir))
-					(setq found dir))
-				    (setq roots (cdr roots)))
-				  found))))))
+			    (lambda (dir)
+			      (let ((roots backend-roots)
+				    found)
+				(while (and roots (not found))
+				  (if (file-exists-p
+				       (expand-file-name (car roots) dir))
+				      (setq found dir))
+				  (setq roots (cdr roots)))
+				found)))))
 
 (eval-and-compile
   (fset 'quiet-save-write-region-original (symbol-function 'write-region)))
