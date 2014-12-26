@@ -173,11 +173,12 @@ will be used."
 (define-minor-mode quiet-save-mode nil
   :global t
   :group 'quiet-save
-  (setq quiet-save-idle-timer
-	(if quiet-save-mode
-	    (run-with-idle-timer quiet-save-delay t 'quiet-save-buffers)
-	  (and (timerp quiet-save-idle-timer)
-	       (cancel-timer quiet-save-idle-timer)))))
+  (if quiet-save-idle-timer
+      (setq quiet-save-idle-timer
+	    (cancel-timer quiet-save-idle-timer)))
+  (if quiet-save-mode
+      (setq quiet-save-idle-timer
+	    (run-with-idle-timer quiet-save-delay t 'quiet-save-buffers))))
 
 (provide 'quiet-save)
 ;;; quiet-save.el ends here
