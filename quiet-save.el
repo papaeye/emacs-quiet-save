@@ -71,13 +71,43 @@
 
 (defcustom quiet-save-exclude nil
   "List of regexps and predicates for filenames excluded from the auto-saving
-buffers."
+buffers.  When a filename matches any of the regexps or satisfies any of the
+predicates in `find-file-hook' it is excluded from the auto-saving buffers.
+A predicate is a function that is passed a filename to check and that
+must return non-nil to exclude it."
   :type '(repeat (choice regexp function))
   :group 'quiet-save)
 
 (defcustom quiet-save-keep nil
   "List of regexps and predicates for filenames kept in the auto-saving
- buffers."
+buffers.  Regexps and predicates are tried in the specified order
+in `find-file-hook'.
+When nil all filenames are kept in the auto-saving buffers.
+When a filename matches any of the regexps or satisfies any of the
+predicates it is kept in the auto-saving buffers.
+A predicate is a function that is passed a filename to check and that
+must return non-nil to keep it."
+  :type '(repeat (choice regexp function))
+  :group 'quiet-save)
+
+(defcustom quiet-save-last-exclude nil
+  "List of regexps and predicates for filenames excluded from the auto-saving
+buffers.  When a filename matches any of the regexps or satisfies any of the
+predicates just before saving it is excluded from the auto-saving buffers.
+A predicate is a function that is passed a filename to check and that
+must return non-nil to exclude it."
+  :type '(repeat (choice regexp function))
+  :group 'quiet-save)
+
+(defcustom quiet-save-last-keep nil
+  "List of regexps and predicates for filenames kept in the auto-saving
+buffers.  Regexps and predicates are tried in the specified order
+just before saving.
+When nil all filenames are kept in the auto-saving buffers.
+When a filename matches any of the regexps or satisfies any of the
+predicates it is kept in the auto-saving buffers.
+A predicate is a function that is passed a filename to check and that
+must return non-nil to keep it."
   :type '(repeat (choice regexp function))
   :group 'quiet-save)
 
@@ -100,9 +130,8 @@ will be used."
 (defvar quiet-save-vc-backend-alist
   '((git . ".git") (hg . ".hg")))
 
-(defun quiet-save-include-p (filename)
+(defun quiet-save-include-p (filename checks)
   (let ((case-fold-search quiet-save-case-fold-search)
-	(checks quiet-save-exclude)
         (keepit t))
     (while (and checks keepit)
       (setq keepit (not (ignore-errors
@@ -112,9 +141,8 @@ will be used."
 	    checks (cdr checks)))
     keepit))
 
-(defun quiet-save-keep-p (filename)
+(defun quiet-save-keep-p (filename checks)
   (let* ((case-fold-search quiet-save-case-fold-search)
-	 (checks quiet-save-keep)
 	 (keepit (null checks)))
     (while (and checks (not keepit))
       (setq keepit (condition-case nil
@@ -141,6 +169,8 @@ will be used."
 				  (setq roots (cdr roots)))
 				found)))))
 
+(defvar quiet-save-buffer-list nil)
+
 (eval-and-compile
   (fset 'quiet-save-write-region-original (symbol-function 'write-region)))
 
@@ -154,13 +184,15 @@ will be used."
 (defun quiet-save-buffers ()
   (cl-letf (((symbol-function 'write-region) #'quiet-save-write-region))
     (save-current-buffer
-      (dolist (buffer (buffer-list))
+      (dolist (buffer quiet-save-buffer-list)
 	(set-buffer buffer)
 	(when (and buffer-file-name
 		   (buffer-modified-p)
 		   (not buffer-read-only)
-		   (quiet-save-include-p buffer-file-name)
-		   (quiet-save-keep-p buffer-file-name)
+		   (quiet-save-include-p buffer-file-name
+					 quiet-save-last-exclude)
+		   (quiet-save-keep-p buffer-file-name
+				      quiet-save-last-keep)
 		   (not (buffer-base-buffer))
 		   (file-writable-p buffer-file-name))
 	  (basic-save-buffer)
@@ -170,15 +202,40 @@ will be used."
 (defvar quiet-save-idle-timer nil)
 
 ;;;###autoload
+(defun quiet-save-turn-on ()
+  (when (and (quiet-save-include-p buffer-file-name quiet-save-exclude)
+	     (quiet-save-keep-p buffer-file-name quiet-save-keep))
+    (add-to-list 'quiet-save-buffer-list (current-buffer))
+    (add-hook 'kill-buffer-hook 'quiet-save-turn-off nil t)))
+
+;;;###autoload
+(defun quiet-save-turn-off ()
+  (setq quiet-save-buffer-list
+	(delq (current-buffer) quiet-save-buffer-list))
+  (remove-hook 'kill-buffer-hook 'quiet-save-turn-off t))
+
+(defun quiet-save-adjust-local-modes (on-or-off)
+  (save-current-buffer
+    (dolist (buffer (buffer-list))
+      (set-buffer buffer)
+      (funcall on-or-off))))
+
+;;;###autoload
 (define-minor-mode quiet-save-mode nil
   :global t
   :group 'quiet-save
   (if quiet-save-idle-timer
       (setq quiet-save-idle-timer
 	    (cancel-timer quiet-save-idle-timer)))
-  (if quiet-save-mode
-      (setq quiet-save-idle-timer
-	    (run-with-idle-timer quiet-save-delay t 'quiet-save-buffers))))
+  (cond
+   (quiet-save-mode
+    (setq quiet-save-idle-timer
+	  (run-with-idle-timer quiet-save-delay t 'quiet-save-buffers))
+    (add-hook 'find-file-hook 'quiet-save-turn-on)
+    (quiet-save-adjust-local-modes #'quiet-save-turn-on))
+   (t
+    (remove-hook 'find-file-hook 'quiet-save-turn-on)
+    (quiet-save-adjust-local-modes #'quiet-save-turn-off))))
 
 (provide 'quiet-save)
 ;;; quiet-save.el ends here
