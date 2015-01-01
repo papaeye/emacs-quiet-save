@@ -7,6 +7,7 @@
 ;;         papaeye <papaeye@gmail.com>
 ;; Keywords: convenience, files
 ;; Version: 0.1.0
+;; Package-Requires: ((cl-lib "0.5"))
 ;; Note: auto-save-buffers-enhanced.el borrows main ideas and some
 ;;       codes written by Satoru Takabayashi and enhances original
 ;;       one. Thanks a lot!!!
@@ -62,8 +63,7 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'cl))
+(require 'cl-lib)
 
 (defgroup quiet-save nil
   "Auto-saving buffers quietly."
