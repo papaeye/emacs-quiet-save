@@ -63,7 +63,7 @@
 
 ;;; Code:
 
-(require 'cl-lib)
+(eval-when-compile (require 'cl-lib))
 
 (defgroup quiet-save nil
   "Auto-saving buffers quietly."
